@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LakePilot — Learn to build AI agents on Databricks, by doing</title>
+<meta name="description" content="LakePilot is a hands-on tutor for building AI agents on Databricks — a 9-module course plus a desktop app with a live Databricks sandbox. Learn by doing." />
+<style>
+  :root{
+    --navy-deep:#0A1E36; --navy:#0F2A47; --navy-200:#18395E; --steel:#1C5A88;
+    --blue:#2F9BD7; --blue-soft:#79C2EC; --gold:#F3A93C; --gold-bright:#FFC24B;
+    --text:#EAF2FA; --muted:#9BB3C9; --success:#46C28A;
+    --sans:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --mono:'Cascadia Code',Consolas,'Courier New',monospace;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--navy-deep);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue-soft);text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .gold{color:var(--gold)} .blue{color:var(--blue)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;background:rgba(10,30,54,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--navy-200)}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:60px}
+  .brand{font-weight:800;font-size:20px;letter-spacing:.2px}
+  .brand .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gold);margin-right:9px;box-shadow:0 0 0 3px rgba(243,169,60,.25)}
+  nav .links{margin-left:auto;display:flex;gap:22px;align-items:center}
+  nav .links a{color:var(--muted);font-size:14px}
+  nav .links a:hover{color:var(--text)}
+  .btn{display:inline-block;font-weight:700;border-radius:10px;padding:11px 20px;font-size:15px;cursor:pointer;border:2px solid transparent;transition:transform .08s ease,box-shadow .15s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);box-shadow:0 6px 22px rgba(243,169,60,.28)}
+  .btn-gold:hover{background:var(--gold-bright)}
+  .btn-ghost{background:transparent;color:var(--text);border-color:var(--navy-200)}
+  .btn-ghost:hover{border-color:var(--gold)}
+  nav .btn{padding:8px 16px;font-size:14px}
+
+  /* hero */
+  header.hero{position:relative;overflow:hidden;padding:78px 0 56px;text-align:center;
+    background:radial-gradient(900px 420px at 50% -8%,rgba(47,155,215,.20),transparent 60%),
+               radial-gradient(700px 360px at 80% 0,rgba(243,169,60,.14),transparent 55%)}
+  .pill{display:inline-block;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-bright);
+    border:1px solid rgba(243,169,60,.4);border-radius:999px;padding:5px 13px;margin-bottom:18px}
+  .hero h1{font-size:clamp(32px,5.4vw,56px);line-height:1.08;margin:0 auto 16px;max-width:14ch;font-weight:800;letter-spacing:-.5px}
+  .hero p.lede{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:62ch;margin:0 auto 28px}
+  .cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .hero .note{margin-top:16px;font-size:13px;color:var(--muted)}
+
+  /* demo */
+  section{padding:54px 0;border-top:1px solid var(--navy-200)}
+  .section-head{text-align:center;margin-bottom:30px}
+  .section-head .eyebrow{color:var(--gold);font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  .section-head h2{font-size:clamp(24px,3.4vw,34px);margin:8px 0 8px;font-weight:800}
+  .section-head p{color:var(--muted);max-width:60ch;margin:0 auto;font-size:16px}
+  .demo-frame{position:relative;border:3px solid var(--gold-bright);border-radius:14px;overflow:hidden;
+    box-shadow:0 24px 70px rgba(0,0,0,.45);background:var(--navy);aspect-ratio:16/10}
+  .demo-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .demo-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy);border-bottom:1px solid var(--navy-200)}
+  .demo-bar .dots{display:flex;gap:6px} .demo-bar .dots i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .demo-bar .dots i:nth-child(1){background:#E5614F}.demo-bar .dots i:nth-child(2){background:var(--gold)}.demo-bar .dots i:nth-child(3){background:var(--success)}
+  .demo-bar span{font-size:12px;color:var(--muted);margin-left:6px}
+  .demo-wrap{position:relative}
+  .demo-stage{position:relative}
+  .demo-overlay{position:absolute;inset:38px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    background:linear-gradient(180deg,rgba(10,30,54,.65),rgba(10,30,54,.92));cursor:pointer;text-align:center;padding:24px}
+  .demo-overlay h3{margin:0;font-size:22px} .demo-overlay p{margin:0;color:var(--muted);max-width:40ch}
+  .demo-overlay.hidden{display:none}
+
+  /* features */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .card{background:var(--navy);border:1px solid var(--navy-200);border-radius:14px;padding:22px}
+  .card .ic{font-size:26px;margin-bottom:10px}
+  .card h3{margin:0 0 6px;font-size:18px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .card.spot{border-color:var(--gold);box-shadow:0 0 0 1px rgba(243,169,60,.25)}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;counter-reset:s}
+  .step{position:relative;background:var(--navy);border:1px solid var(--navy-200);border-radius:14px;padding:24px 20px 20px}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-16px;left:20px;width:34px;height:34px;border-radius:50%;
+    background:var(--gold);color:var(--navy-deep);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .step h3{margin:8px 0 6px;font-size:17px} .step p{margin:0;color:var(--muted);font-size:14px}
+
+  /* modules */
+  .mods{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .mod{font-size:13.5px;color:var(--text);background:var(--navy);border:1px solid var(--navy-200);border-radius:999px;padding:8px 15px}
+  .mod b{color:var(--gold-bright)}
+
+  /* final cta */
+  .final{text-align:center;background:radial-gradient(700px 300px at 50% 120%,rgba(243,169,60,.18),transparent 60%)}
+  .final h2{font-size:clamp(26px,3.6vw,38px);margin:0 0 12px;font-weight:800}
+  .final p{color:var(--muted);max-width:54ch;margin:0 auto 26px;font-size:17px}
+
+  footer{border-top:1px solid var(--navy-200);padding:30px 0;color:var(--muted);font-size:13.5px}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  footer a{color:var(--muted)} footer a:hover{color:var(--text)}
+</style>
+</head>
+<body>
+  <nav>
+    <div class="wrap">
+      <div class="brand"><span class="dot"></span><span class="blue">Lake</span><span class="gold">Pilot</span></div>
+      <div class="links">
+        <a href="#demo">Demo</a>
+        <a href="#features">Features</a>
+        <a href="#course">Course</a>
+        <a href="#get" class="btn btn-gold">Get it free</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <span class="pill">Hands-on · Databricks · Mosaic AI Agent Framework</span>
+      <h1>Learn to build <span class="gold">AI agents on Databricks</span> — by doing.</h1>
+      <p class="lede">LakePilot is a lesson-by-lesson tutor with a <b>live Databricks sandbox</b> right next to the lesson.
+        Read a tight concept, run it for real, do a small challenge, check yourself. Nine modules from
+        <i>“I have a login”</i> to shipping a governed multi-agent system.</p>
+      <div class="cta-row">
+        <a href="#demo" class="btn btn-gold">▶ Try the live demo</a>
+        <a href="#get" class="btn btn-ghost">⬇ Get it for Windows</a>
+      </div>
+      <div class="note">Free to try · bring your own Databricks workspace (Free Edition works)</div>
+    </div>
+  </header>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Try it right here</div>
+        <h2>The two-pane tutor, running live</h2>
+        <p>Lesson on the left, a Databricks sandbox on the right. Hit <b>🔊 Read aloud</b> and the lesson lights up
+          <span class="gold">word-by-word in bright gold</span>, karaoke-style, in the real Australian neural voice.</p>
+      </div>
+      <div class="demo-frame">
+        <div class="demo-bar"><div class="dots"><i></i><i></i><i></i></div><span>lakepilot — Databricks agent tutor</span></div>
+        <div class="demo-stage">
+          <iframe id="demoFrame" title="LakePilot live demo" loading="lazy" data-src="app/index.html"></iframe>
+          <div class="demo-overlay" id="demoOverlay">
+            <h3>▶ Launch the interactive demo</h3>
+            <p>Loads the real two-pane app — pick a module, read a lesson, try the gold karaoke read-aloud.</p>
+            <span class="btn btn-gold">Load demo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Why it works</div>
+        <h2>Built for active practice, not passive watching</h2>
+      </div>
+      <div class="grid">
+        <div class="card spot">
+          <div class="ic">🛠️</div><h3>Learn by doing</h3>
+          <p>Every lesson ends with a small challenge you run in a live workspace — then it stops and waits for you.</p>
+        </div>
+        <div class="card">
+          <div class="ic">⌁</div><h3>Real Databricks sandbox</h3>
+          <p>The right pane calls a real serving endpoint — Foundation Model API, Unity Catalog tools, Genie, MCP.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🔊</div><h3>Gold karaoke read-aloud</h3>
+          <p>Each word lights bright gold as it’s spoken in a Microsoft Edge neural Australian voice. Click any word to start there.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🎓</div><h3>9 modules, ~60 lessons</h3>
+          <p>Setup → first agent → tools &amp; data → evaluation → deployment → multi-agent supervisor → governance → capstone.</p>
+        </div>
+        <div class="card">
+          <div class="ic">📺</div><h3>Narrated videos</h3>
+          <p>A short “watch, then do it yourself” explainer per module — supplementary, never the main path.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🖥️</div><h3>Native desktop app</h3>
+          <p>Runs in a real window (no browser CORS); the Databricks call and neural voice are made from Python.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">How a lesson flows</div>
+        <h2>Concept → Run → Challenge → Check</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Read the concept</h3><p>2–4 sentences on <i>why</i> it matters — not just what.</p></div>
+        <div class="step"><h3>Run it live</h3><p>The exact commands, executed in your Databricks sandbox.</p></div>
+        <div class="step"><h3>Do the challenge</h3><p>A small task. Then it stops and waits for you to report back.</p></div>
+        <div class="step"><h3>Check yourself</h3><p>One or two questions to confirm it actually landed.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="course">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">The curriculum</div>
+        <h2>From login to a shipped multi-agent system</h2>
+      </div>
+      <div class="mods">
+        <span class="mod"><b>0</b> · Setup &amp; orientation</span>
+        <span class="mod"><b>1</b> · Your first agent</span>
+        <span class="mod"><b>2</b> · Authoring agents properly</span>
+        <span class="mod"><b>3</b> · Tools &amp; data (Genie, RAG, MCP)</span>
+        <span class="mod"><b>4</b> · Evaluation &amp; quality</span>
+        <span class="mod"><b>5</b> · Deployment</span>
+        <span class="mod"><b>6</b> · Multi-agent supervisor</span>
+        <span class="mod"><b>7</b> · Governance &amp; production</span>
+        <span class="mod"><b>8</b> · Capstone — build &amp; ship</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="get" class="final">
+    <div class="wrap">
+      <h2>Start building agents this week</h2>
+      <p>Download the desktop app for Windows, or try the demo in your browser first. You bring a Databricks
+        workspace (Free Edition is fine); LakePilot brings the path.</p>
+      <div class="cta-row">
+        <a href="#download" class="btn btn-gold" id="downloadBtn">⬇ Download for Windows</a>
+        <a href="#demo" class="btn btn-ghost">▶ Try the demo first</a>
+      </div>
+      <div class="note">Windows 10/11 · ~23 MB · no install required</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div><span class="blue">Lake</span><span class="gold">Pilot</span> — a hands-on Databricks agent tutor.</div>
+      <div>Built in the LifePilot house style · navy · blue · gold</div>
+    </div>
+  </footer>
+
+<script>
+  // Lazy-load the live app iframe only when the visitor asks (keeps the page fast).
+  (function(){
+    var overlay=document.getElementById('demoOverlay'), frame=document.getElementById('demoFrame');
+    function load(){ if(!frame.src){ frame.src=frame.dataset.src; } overlay.classList.add('hidden'); }
+    overlay.addEventListener('click',load);
+    // If someone clicks "Try the live demo", auto-load too.
+    document.querySelectorAll('a[href="#demo"]').forEach(function(a){ a.addEventListener('click',function(){ setTimeout(load,400); }); });
+  })();
+</script>
+</body>
+</html>

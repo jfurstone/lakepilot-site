@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LakePilot</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root{
+    --navy-deep:#0A1E36; --navy:#0F2A47; --navy-200:#18395E; --steel:#1C5A88;
+    --blue:#2F9BD7; --blue-soft:#79C2EC; --gold:#F3A93C; --gold-bright:#FFC24B;
+    --text:#EAF2FA; --muted:#9BB3C9; --success:#46C28A; --danger:#E5614F;
+    --mono:'Cascadia Code',Consolas,'Courier New',monospace;
+    --sans:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  /* Bright-gold outline framing the whole app */
+  body{background:var(--navy-deep);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;height:100vh;overflow:hidden;border:3px solid var(--gold-bright)}
+  header{display:flex;align-items:center;gap:18px;padding:12px 18px;background:var(--navy);border-bottom:2px solid var(--gold-bright)}
+  .wordmark{font-size:20px;font-weight:700;letter-spacing:.2px}
+  .wordmark .o{color:var(--blue)} .wordmark .a{color:var(--gold)} .wordmark .t{color:var(--muted);font-weight:400;margin-left:6px}
+  header .gauge{color:var(--blue);font-size:20px}
+  select,input,button,textarea{font-family:inherit}
+  select{background:var(--navy-deep);color:var(--text);border:1px solid var(--navy-200);border-radius:8px;padding:7px 10px;font-size:14px}
+  .toggle{margin-left:auto;background:transparent;color:var(--text);border:1px solid var(--navy-200);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px}
+  .toggle.on{border-color:var(--gold);color:var(--gold)}
+  main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:0}
+  .pane{min-width:0;min-height:0;display:flex;flex-direction:column}
+  .tutor{border-right:2px solid var(--gold-bright)}
+  .pane-head{padding:9px 16px;font-size:12px;letter-spacing:.04em;color:var(--muted);display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--gold-bright);background:var(--navy)}
+  .pane-head i{color:var(--blue)}
+  .lesson{overflow:auto;padding:8px 26px 40px;line-height:1.7}
+  .lesson h1{font-size:30px;color:var(--text);border-bottom:2px solid var(--gold);padding-bottom:10px}
+  .lesson h2{font-size:15px;color:var(--gold);letter-spacing:.02em;margin-top:26px}
+  .lesson h3{font-size:20px;color:var(--blue-soft);margin-top:24px}
+  .lesson a{color:var(--blue)}
+  .lesson strong{color:var(--text)}
+  .lesson code{background:var(--navy-deep);color:var(--blue-soft);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:.9em}
+  .lesson pre{background:var(--navy-deep);border:1px solid var(--navy-200);border-radius:8px;padding:14px;overflow:auto}
+  .lesson pre code{background:none;color:var(--text)}
+  .lesson table{border-collapse:collapse;width:100%;font-size:14px}
+  .lesson th{background:var(--navy);color:var(--text);text-align:left;padding:8px}
+  .lesson td{border-top:1px solid var(--navy-200);padding:8px;color:var(--muted)}
+  .lesson blockquote{border-left:3px solid var(--steel);margin:14px 0;padding:4px 14px;color:var(--muted);background:#0d2745}
+  /* sandbox */
+  .sandbox{background:var(--navy-deep)}
+  .cfg{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-bottom:1px solid var(--navy-200);background:var(--navy)}
+  .cfg label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:3px}
+  .cfg input{background:var(--navy-deep);color:var(--text);border:1px solid var(--navy-200);border-radius:7px;padding:6px 9px;font-size:12px;min-width:150px}
+  .cfg input.host{min-width:260px}
+  .term{flex:1;overflow:auto;padding:14px 16px;font-family:var(--mono);font-size:13px;line-height:1.65;white-space:pre-wrap}
+  .term .u{color:var(--blue-soft)} .term .ok{color:var(--success)} .term .err{color:var(--danger)} .term .sys{color:var(--muted)}
+  .ask{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--navy-200);background:var(--navy)}
+  .ask input{flex:1;background:var(--navy-deep);color:var(--text);border:1px solid var(--navy-200);border-radius:8px;padding:10px 12px;font-size:14px}
+  .ask button{background:var(--gold);color:var(--navy-deep);border:none;border-radius:8px;padding:10px 18px;font-weight:500;cursor:pointer;font-size:14px}
+  .ask button:disabled{opacity:.5;cursor:default}
+  footer{padding:6px 16px;font-size:11px;color:var(--muted);background:var(--navy);border-top:2px solid var(--gold-bright)}
+  footer b{color:var(--gold-bright)}
+  /* ---- Karaoke read-aloud (bright-gold word-on-word, as in Promptsickle) ---- */
+  .lesson .w{border-radius:4px;transition:color 120ms ease,background-color 120ms ease}
+  /* While reading: upcoming words dim, already-read words full, current word lit gold */
+  .lesson.reading .w{color:var(--muted)}
+  .lesson.reading .w.read{color:var(--text)}
+  .lesson .w.current{color:#0a5bff;font-weight:700;background:var(--gold-bright);box-shadow:0 0 0 3px var(--gold-bright)}
+</style>
+</head>
+<body>
+  <header>
+    <span class="gauge">◐</span>
+    <span class="wordmark"><span class="o">Lake</span><span class="a">Pilot</span><span class="t">Databricks agent tutor</span></span>
+    <select id="moduleSel" title="Pick a module"></select>
+    <button id="voiceBtn" class="toggle">🔇 Read aloud</button>
+  </header>
+
+  <main>
+    <section class="pane tutor">
+      <div class="pane-head"><i>📖</i> Lesson</div>
+      <div id="lesson" class="lesson">Loading…</div>
+    </section>
+
+    <section class="pane sandbox">
+      <div class="pane-head"><i>⌁</i> Sandbox · Databricks</div>
+      <div class="cfg">
+        <label>Workspace host<input id="host" class="host" value="https://dbc-xxxxxxxx-xxxx.cloud.databricks.com"></label>
+        <label>Endpoint<input id="endpoint" value="my-agent-endpoint"></label>
+        <label>Token (dapi…)<input id="token" type="password" placeholder="paste to run live"></label>
+      </div>
+      <div id="term" class="term"><span class="sys">Ask the agent a question below. With no token, you'll see a demo response.
+Real calls need a Databricks token — in the LakePilot desktop app the call is made from Python (no CORS); a plain browser falls back to demo.
+</span></div>
+      <div class="ask">
+        <input id="prompt" placeholder="e.g. say hello to me" />
+        <button id="runBtn">Run ▸</button>
+      </div>
+    </section>
+  </main>
+
+  <footer><b>LakePilot</b> — Databricks agent tutor · LifePilot theme · <b>lessons</b> on the left, a live <b>Databricks sandbox</b> on the right (demo fallback without a token).</footer>
+
+<script>
+const MODULES=[
+  [0,"Setup & orientation"],[1,"Your first agent"],[2,"Author properly"],
+  [3,"Tools & data"],[4,"Evaluation & quality"],[5,"Deployment"],
+  [6,"Multi-agent orchestration"],[7,"Governance & production"],[8,"Capstone — build & ship"]
+];
+const sel=document.getElementById('moduleSel');
+MODULES.forEach(([n,t])=>{const o=document.createElement('option');o.value=n;o.textContent=`Module ${n} — ${t}`;sel.appendChild(o);});
+const lessonEl=document.getElementById('lesson');
+
+async function loadModule(n){
+  lessonEl.innerHTML='Loading…';
+  try{
+    const r=await fetch(`lessons/module-${n}.md`);
+    if(!r.ok) throw new Error(r.status);
+    const md=await r.text();
+    lessonEl.innerHTML=marked.parse(md);
+    lessonEl.scrollTop=0;
+  }catch(e){
+    lessonEl.innerHTML=`<h1>Module ${n}</h1><p style="color:var(--muted)">Couldn't load the lesson file. Serve this folder over http (e.g. <code>python -m http.server</code>) — browsers block <code>file://</code> fetches.</p>`;
+  }
+  stopRead();        // halt any in-flight narration from the previous module
+  tokenizeLesson();  // wrap words in spans so the karaoke highlight can land on them
+}
+sel.addEventListener('change',()=>loadModule(sel.value));
+loadModule(0);
+
+/* ---- Karaoke read-aloud ----------------------------------------------------
+   Desktop (lakepilot.exe): real Microsoft Edge neural voice en-AU-NatashaNeural
+   via the Python bridge, with per-word timings driving a bright-gold word-on-word
+   highlight. Browser: falls back to the Web Speech AU female voice (word-boundary
+   events drive the same highlight). Click any word to start reading from there. */
+const voiceBtn=document.getElementById('voiceBtn');
+let spans=[];            // the wrapped <span class="w"> words, in reading order
+let words=[];            // their plain text
+let reading=false;       // narration in progress
+let curIdx=-1;           // currently highlighted word
+let currentAudio=null;   // desktop <audio> being played
+
+// Wrap every prose word (skipping code/pre) in a span so the highlight can land on it.
+function tokenizeLesson(){
+  spans=[]; words=[]; curIdx=-1;
+  const walker=document.createTreeWalker(lessonEl,NodeFilter.SHOW_TEXT,{
+    acceptNode(n){
+      if(!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      for(let p=n.parentElement;p&&p!==lessonEl;p=p.parentElement){
+        const t=p.tagName; if(t==='PRE'||t==='CODE') return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const textNodes=[]; let n; while(n=walker.nextNode()) textNodes.push(n);
+  for(const tn of textNodes){
+    const frag=document.createDocumentFragment();
+    for(const part of tn.nodeValue.split(/(\s+)/)){
+      if(!part) continue;
+      if(/^\s+$/.test(part)){ frag.appendChild(document.createTextNode(part)); }
+      else{ const s=document.createElement('span'); s.className='w'; s.textContent=part;
+            spans.push(s); words.push(part); frag.appendChild(s); }
+    }
+    tn.parentNode.replaceChild(frag,tn);
+  }
+}
+// Click a word → read from there.
+lessonEl.addEventListener('click',e=>{
+  const w=e.target.closest('.w'); if(!w) return;
+  startRead(spans.indexOf(w));
+});
+
+function setCurrent(idx){
+  if(idx<0||idx>=spans.length||idx===curIdx) return;
+  for(let k=Math.max(curIdx,0);k<idx;k++) spans[k].classList.add('read');
+  if(curIdx>=0) spans[curIdx].classList.remove('current');
+  spans[idx].classList.add('current');
+  spans[idx].scrollIntoView({block:'center',behavior:'smooth'});
+  curIdx=idx;
+}
+function stopRead(){
+  reading=false; lessonEl.classList.remove('reading');
+  voiceBtn.classList.remove('on'); voiceBtn.textContent='🔇 Read aloud';
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+  if('speechSynthesis' in window) speechSynthesis.cancel();
+  spans.forEach(s=>s.classList.remove('current'));
+}
+
+// Web Speech fallback voice — prefer an AU female.
+function pickVoice(){
+  const vs=speechSynthesis.getVoices();
+  const fem=v=>/(female|natasha|catherine|libby|sonia|hazel|zira|aria)/i.test(v.name);
+  return vs.find(v=>/^en-au/i.test(v.lang)&&fem(v))||vs.find(v=>/^en-au/i.test(v.lang))
+       ||vs.find(v=>/^en/i.test(v.lang)&&fem(v))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+}
+
+async function startRead(from){
+  if(!spans.length) return;
+  if(reading) stopRead();
+  from=Math.max(0,from||0);
+  reading=true; lessonEl.classList.add('reading');
+  voiceBtn.classList.add('on'); voiceBtn.textContent='⏳ …';
+  spans.forEach((s,k)=>{ s.classList.toggle('read',k<from); s.classList.remove('current'); });
+  curIdx=from-1;
+  const bridge=window.pywebview&&window.pywebview.api&&window.pywebview.api.tts;
+  if(bridge){ try{ await playEdge(from); return; }catch(err){ /* fall back below */ } }
+  playWeb(from);
+}
+
+// Desktop: real Edge neural voice + per-word marks.
+async function playEdge(from){
+  const text=words.slice(from).join(' ');
+  const res=await window.pywebview.api.tts(text);
+  if(!reading) return;               // user stopped while synthesizing
+  if(!res||!res.ok){ playWeb(from); return; }
+  voiceBtn.textContent='🔊 Read aloud';
+  const marks=res.marks||[];
+  const map=alignMarks(marks,from);  // mark i → absolute span index
+  const audio=new Audio('data:audio/mpeg;base64,'+res.audio);
+  currentAudio=audio;
+  const drive=()=>{
+    const t=audio.currentTime*1000; let landed=-1;
+    for(let i=0;i<marks.length;i++){ if(marks[i].offset<=t){ if(map[i]>=0) landed=map[i]; } else break; }
+    if(landed>=0) setCurrent(landed);
+  };
+  audio.ontimeupdate=drive;
+  // ontimeupdate fires only ~4x/s; a rAF loop keeps the highlight tight to the voice.
+  (function raf(){ if(currentAudio!==audio||audio.paused) return; drive(); requestAnimationFrame(raf); })();
+  audio.onended=stopRead;
+  try{ await audio.play(); }
+  catch(err){ // autoplay still blocked, or codec issue → fall back to Web Speech
+    console.warn('audio.play() failed:',err); currentAudio=null; playWeb(from);
+  }
+}
+// Greedily align Edge's spoken-word marks to our word spans (Edge drops punctuation-only tokens).
+function alignMarks(marks,from){
+  const norm=t=>t.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const map=[]; let p=from;
+  for(const m of marks){
+    const mt=norm(m.text); if(!mt){ map.push(-1); continue; }
+    let found=-1;
+    for(let k=p;k<words.length;k++){
+      const wt=norm(words[k]);
+      if(wt&&(wt===mt||wt.startsWith(mt)||mt.startsWith(wt))){ found=k; p=k+1; break; }
+    }
+    map.push(found);
+  }
+  return map;
+}
+// Browser fallback: Web Speech, word-boundary events drive the same highlight.
+function playWeb(from){
+  if(!('speechSynthesis' in window)){ stopRead(); return; }
+  voiceBtn.textContent='🔊 Read aloud';
+  const slice=words.slice(from);
+  const starts=[]; let pos=0;
+  for(const w of slice){ starts.push(pos); pos+=w.length+1; }
+  const u=new SpeechSynthesisUtterance(slice.join(' '));
+  const v=pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } u.rate=1;
+  u.onboundary=e=>{
+    if(e.name&&e.name!=='word') return;
+    const ci=e.charIndex||0;
+    let lo=0,hi=starts.length-1,ans=0;
+    while(lo<=hi){ const mid=(lo+hi)>>1; if(starts[mid]<=ci){ ans=mid; lo=mid+1; } else hi=mid-1; }
+    setCurrent(from+ans);
+  };
+  u.onend=stopRead;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+voiceBtn.addEventListener('click',()=>{ reading?stopRead():startRead(0); });
+
+/* ---- Databricks sandbox ---- */
+const term=document.getElementById('term'), runBtn=document.getElementById('runBtn'), promptEl=document.getElementById('prompt');
+function line(cls,txt){const s=document.createElement('span');if(cls)s.className=cls;s.textContent=txt+'\n';term.appendChild(s);term.scrollTop=term.scrollHeight;}
+async function run(){
+  const q=promptEl.value.trim(); if(!q) return;
+  const host=document.getElementById('host').value.replace(/\/+$/,'');
+  const ep=document.getElementById('endpoint').value.trim();
+  const tok=document.getElementById('token').value.trim();
+  line('u','> '+q); promptEl.value=''; runBtn.disabled=true;
+  if(!tok){
+    line('sys','(demo mode — no token) the agent would reply:');
+    line('ok','Hello! You said: '+q);
+    runBtn.disabled=false; return;
+  }
+  // Desktop (lakepilot.exe): call through the Python bridge — no CORS, native HTTPS.
+  const bridge = window.pywebview && window.pywebview.api;
+  if(bridge){
+    try{
+      const res=await window.pywebview.api.databricks_call(host,ep,tok,q);
+      if(res && res.ok) line('ok',res.text); else line('err',(res&&res.error)||'call failed');
+    }catch(e){ line('err','bridge error: '+e.message); }
+    runBtn.disabled=false; return;
+  }
+  try{
+    const res=await fetch(`${host}/serving-endpoints/${ep}/invocations`,{
+      method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({input:[{role:'user',content:q}]})
+    });
+    if(!res.ok){line('err',`HTTP ${res.status}: ${(await res.text()).slice(0,200)}`);}
+    else{
+      const j=await res.json();
+      const out=(j.output||[]).map(o=>o.content||(o.item&&o.item.content)||'').join('') || JSON.stringify(j).slice(0,400);
+      line('ok',out);
+    }
+  }catch(e){
+    line('err','request blocked: '+e.message);
+    line('sys','(browser CORS often blocks direct serving calls — the packaged Tauri app calls from the Rust core, no CORS. Showing demo:)');
+    line('ok','Hello! You said: '+q);
+  }
+  runBtn.disabled=false;
+}
+runBtn.addEventListener('click',run);
+promptEl.addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+</script>
+</body>
+</html>
