@@ -63,9 +63,46 @@
   .lesson.reading .w{color:var(--muted)}
   .lesson.reading .w.read{color:var(--text)}
   .lesson .w.current{color:#0a5bff;font-weight:700;background:var(--gold-bright);box-shadow:0 0 0 3px var(--gold-bright)}
+  /* ---- License / trial gating ---- */
+  .trialbar{display:none;align-items:center;gap:14px;padding:7px 18px;font-size:13px;background:rgba(243,169,60,.14);border-bottom:2px solid var(--gold-bright);color:var(--text)}
+  .trialbar.show{display:flex}
+  .trialbar .buy{margin-left:auto;color:var(--muted)}
+  .linklike{background:none;border:none;padding:0;margin:0;font:inherit;color:var(--gold-bright);cursor:pointer;text-decoration:underline}
+  .linklike:hover{color:var(--gold)}
+  .license-gate{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:var(--navy-deep);padding:24px}
+  .license-gate.show{display:flex}
+  .license-card{background:var(--navy);border:1px solid var(--navy-200);border-radius:16px;padding:30px;max-width:460px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+  .license-card h1{margin:0 0 10px;font-size:24px;font-weight:800}
+  .license-card h1 .o{color:var(--blue)} .license-card h1 .a{color:var(--gold)}
+  .license-card p{color:var(--muted);margin:0 0 14px;font-size:14.5px;line-height:1.6}
+  .license-card .hint{color:var(--gold-bright);font-size:13px}
+  .license-card textarea{width:100%;min-height:84px;resize:vertical;background:var(--navy-deep);color:var(--text);border:1px solid var(--navy-200);border-radius:10px;padding:11px;font-family:var(--mono);font-size:12.5px}
+  .license-card textarea:focus{outline:none;border-color:var(--gold)}
+  .license-card .err{color:var(--danger);font-size:13px;margin:8px 0 0}
+  .license-card .actions{display:flex;gap:14px;align-items:center;margin-top:14px}
+  .license-card button.primary{background:var(--gold);color:var(--navy-deep);border:none;border-radius:10px;padding:11px 20px;font-weight:700;cursor:pointer;font-size:15px}
+  .license-card button.primary:disabled{opacity:.5;cursor:default}
 </style>
 </head>
 <body>
+  <div id="trialbar" class="trialbar">
+    <span id="trialtext">⏳ Trial</span>
+    <span class="buy">Buy lifetime access — $59 at jfurstone.github.io/lakepilot-site/license.html ·
+      <button type="button" class="linklike" id="enterKeyBtn">Enter key</button></span>
+  </div>
+  <div id="licenseGate" class="license-gate">
+    <div class="license-card">
+      <h1><span class="o">Lake</span><span class="a">Pilot</span></h1>
+      <p id="gateMsg">Your free trial has ended. Buy once for lifetime access — your place in the course is saved.</p>
+      <p class="hint" id="gateHint">Get a key at jfurstone.github.io/lakepilot-site/license.html</p>
+      <textarea id="gateToken" rows="3" placeholder="paste your license key…" spellcheck="false"></textarea>
+      <p class="err" id="gateErr" hidden></p>
+      <div class="actions">
+        <button class="primary" id="gateActivate">Unlock</button>
+        <button type="button" class="linklike" id="gateCancel" hidden>Keep using my trial</button>
+      </div>
+    </div>
+  </div>
   <header>
     <span class="gauge">◐</span>
     <span class="wordmark"><span class="o">Lake</span><span class="a">Pilot</span><span class="t">Databricks agent tutor</span></span>
@@ -309,6 +346,64 @@ async function run(){
 }
 runBtn.addEventListener('click',run);
 promptEl.addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+
+/* ---- License / trial gating (desktop app only; the browser demo is ungated) ---- */
+(function(){
+  const bar=document.getElementById('trialbar'), barText=document.getElementById('trialtext');
+  const gate=document.getElementById('licenseGate'), gateMsg=document.getElementById('gateMsg'),
+        gateToken=document.getElementById('gateToken'), gateErr=document.getElementById('gateErr'),
+        gateActivate=document.getElementById('gateActivate'), gateCancel=document.getElementById('gateCancel'),
+        enterKeyBtn=document.getElementById('enterKeyBtn');
+  let lic=null;
+  const api=()=>window.pywebview && window.pywebview.api;
+
+  function apply(l){
+    lic=l; if(!l) return;
+    if(l.state==='trial'){
+      barText.textContent='⏳ Trial — '+l.days_left+' day'+(l.days_left===1?'':'s')+' left';
+      bar.classList.add('show'); gate.classList.remove('show');
+    }else if(l.state==='paid'){
+      bar.classList.remove('show'); gate.classList.remove('show');
+    }else{ // expired / invalid / error → hard gate
+      bar.classList.remove('show'); showGate('expired');
+    }
+  }
+  function showGate(mode){
+    gateErr.hidden=true; gateToken.value='';
+    if(mode==='enter'){
+      gateMsg.textContent='Have a license key? Paste it to unlock lifetime access.';
+      gateCancel.hidden=false;
+    }else{
+      gateMsg.textContent='Your free trial has ended. Buy once for lifetime access — your place in the course is saved.';
+      gateCancel.hidden=true;
+    }
+    gate.classList.add('show');
+  }
+  async function activate(){
+    const tok=gateToken.value.trim(); if(!tok||!api()) return;
+    gateActivate.disabled=true; gateErr.hidden=true;
+    try{
+      const res=await api().activate_license(tok);
+      if(res && res.ok){ apply(res.license); }
+      else{
+        gateErr.textContent=(res&&res.error==='license_expired')
+          ? 'That key has expired.' : "That doesn't look like a valid LakePilot key.";
+        gateErr.hidden=false;
+      }
+    }catch(e){ gateErr.textContent='Could not verify that key.'; gateErr.hidden=false; }
+    gateActivate.disabled=false;
+  }
+  gateActivate.addEventListener('click',activate);
+  gateCancel.addEventListener('click',()=>{ if(lic && (lic.state==='trial'||lic.state==='paid')) gate.classList.remove('show'); });
+  enterKeyBtn.addEventListener('click',()=>showGate('enter'));
+
+  function init(){
+    if(!(api() && api().license_status)) return; // browser demo → no gate
+    api().license_status().then(apply).catch(()=>{});
+  }
+  if(window.pywebview) init();
+  else window.addEventListener('pywebviewready', init);
+})();
 </script>
 </body>
 </html>
