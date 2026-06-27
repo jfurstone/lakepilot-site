@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jfurstone.github.io/lakepilot-site/sitemap.xml
